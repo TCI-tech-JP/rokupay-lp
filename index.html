@@ -1,0 +1,1586 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ロクペイ｜特定技能受入機関の月次業務を、AIで終わらせる。</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy: #0d1f3c;
+    --navy-mid: #1a3560;
+    --cyan: #00c2cb;
+    --cyan-dim: rgba(0,194,203,0.15);
+    --cyan-glow: rgba(0,194,203,0.4);
+    --white: #f4f8ff;
+    --gray: #8a9bb5;
+    --gray-light: #c5d1e8;
+    --red-alert: #ff4f5e;
+    --green-ok: #00e5a0;
+    --card-bg: rgba(255,255,255,0.04);
+    --card-border: rgba(255,255,255,0.08);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background-color: var(--navy);
+    color: var(--white);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-weight: 400;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* ── NOISE TEXTURE ── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+  }
+
+  /* ── GRID LINES ── */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,194,203,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,194,203,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── HEADER ── */
+  header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 48px;
+    background: rgba(13,31,60,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+  }
+
+  .logo-mark {
+    width: 32px;
+    height: 32px;
+    background: linear-gradient(135deg, var(--cyan), #006fff);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--navy);
+  }
+
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 32px;
+  }
+
+  nav a {
+    color: var(--gray-light);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: color 0.2s;
+  }
+  nav a:hover { color: var(--cyan); }
+
+  .nav-cta {
+    background: var(--cyan);
+    color: var(--navy) !important;
+    font-weight: 700 !important;
+    padding: 10px 22px;
+    border-radius: 6px;
+    transition: transform 0.2s, box-shadow 0.2s !important;
+  }
+  .nav-cta:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px var(--cyan-glow);
+  }
+
+  /* ── HERO ── */
+  #hero {
+    position: relative;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 120px 48px 80px;
+    overflow: hidden;
+  }
+
+  .hero-glow {
+    position: absolute;
+    width: 800px;
+    height: 800px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,194,203,0.12) 0%, transparent 70%);
+    top: -200px;
+    right: -200px;
+    pointer-events: none;
+    z-index: 1;
+    animation: pulse-glow 6s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulse-glow {
+    from { opacity: 0.6; transform: scale(1); }
+    to { opacity: 1; transform: scale(1.1); }
+  }
+
+  .hero-inner {
+    position: relative;
+    z-index: 2;
+    max-width: 1200px;
+    margin: 0 auto;
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .hero-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--cyan);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .hero-eyebrow::before {
+    content: '';
+    display: block;
+    width: 24px;
+    height: 1px;
+    background: var(--cyan);
+  }
+
+  .hero-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2.2rem, 4vw, 3.4rem);
+    line-height: 1.15;
+    letter-spacing: -0.03em;
+    margin-bottom: 24px;
+  }
+
+  .hero-title em {
+    font-style: normal;
+    color: var(--cyan);
+    display: block;
+  }
+
+  .hero-sub {
+    font-size: 1.1rem;
+    color: var(--gray-light);
+    line-height: 1.8;
+    margin-bottom: 40px;
+    max-width: 480px;
+  }
+
+  .hero-cta-group {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .btn-primary {
+    background: var(--cyan);
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 16px 36px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: transform 0.2s, box-shadow 0.2s;
+    letter-spacing: 0.02em;
+  }
+  .btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px var(--cyan-glow);
+  }
+
+  .btn-ghost {
+    color: var(--white);
+    font-weight: 500;
+    font-size: 0.95rem;
+    padding: 14px 28px;
+    border-radius: 8px;
+    border: 1px solid var(--card-border);
+    background: transparent;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  .btn-ghost:hover {
+    border-color: var(--cyan);
+    background: var(--cyan-dim);
+  }
+
+  .hero-badge {
+    margin-top: 32px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--gray);
+  }
+
+  .badge-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green-ok);
+    animation: blink 2s infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  /* ── HERO VISUAL ── */
+  .hero-visual {
+    position: relative;
+  }
+
+  .mock-card {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 24px;
+    backdrop-filter: blur(8px);
+    animation: float 4s ease-in-out infinite alternate;
+  }
+
+  @keyframes float {
+    from { transform: translateY(0px); }
+    to { transform: translateY(-12px); }
+  }
+
+  .mock-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .mock-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, var(--cyan), #006fff);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+  }
+
+  .mock-title-text {
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .mock-sub-text {
+    font-size: 0.75rem;
+    color: var(--gray);
+  }
+
+  .mock-ai-badge {
+    margin-left: auto;
+    background: var(--cyan-dim);
+    border: 1px solid rgba(0,194,203,0.3);
+    color: var(--cyan);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+
+  .mock-item {
+    margin-bottom: 12px;
+  }
+
+  .mock-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--gray);
+    margin-bottom: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  .mock-value {
+    font-size: 0.82rem;
+    color: var(--white);
+    line-height: 1.5;
+  }
+
+  .mock-risk {
+    background: rgba(255,79,94,0.1);
+    border: 1px solid rgba(255,79,94,0.3);
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-top: 16px;
+    font-size: 0.8rem;
+    color: var(--red-alert);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .mock-card-2 {
+    position: absolute;
+    bottom: -40px;
+    right: -30px;
+    width: 220px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 16px;
+    backdrop-filter: blur(8px);
+    animation: float 4s ease-in-out 2s infinite alternate;
+  }
+
+  .lang-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+  }
+
+  .lang-chip {
+    font-size: 0.7rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid var(--card-border);
+    color: var(--gray-light);
+  }
+
+  .lang-chip.active {
+    background: var(--cyan-dim);
+    border-color: rgba(0,194,203,0.4);
+    color: var(--cyan);
+  }
+
+  /* ── PAIN SECTION ── */
+  #pain {
+    padding: 100px 48px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .section-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .section-eyebrow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--cyan);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .section-eyebrow::before {
+    content: '';
+    display: block;
+    width: 20px;
+    height: 1px;
+    background: var(--cyan);
+  }
+
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.8rem, 3vw, 2.8rem);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 60px;
+  }
+
+  .pain-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--card-border);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+  }
+
+  .pain-item {
+    background: var(--navy);
+    padding: 36px 32px;
+    position: relative;
+    transition: background 0.3s;
+  }
+
+  .pain-item:hover {
+    background: rgba(255,255,255,0.03);
+  }
+
+  .pain-number {
+    font-family: 'Syne', sans-serif;
+    font-size: 3rem;
+    font-weight: 800;
+    color: rgba(0,194,203,0.15);
+    line-height: 1;
+    margin-bottom: 16px;
+  }
+
+  .pain-title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    margin-bottom: 10px;
+    color: var(--white);
+  }
+
+  .pain-desc {
+    font-size: 0.875rem;
+    color: var(--gray-light);
+    line-height: 1.7;
+  }
+
+  .pain-tag {
+    display: inline-block;
+    margin-top: 16px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(255,79,94,0.1);
+    color: var(--red-alert);
+    border: 1px solid rgba(255,79,94,0.2);
+  }
+
+  /* ── SOLUTION SECTION ── */
+  #solution {
+    padding: 100px 48px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .solution-divider {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    margin-bottom: 80px;
+  }
+
+  .solution-divider-line {
+    flex: 1;
+    height: 1px;
+    background: var(--card-border);
+  }
+
+  .solution-divider-text {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: var(--gray);
+    white-space: nowrap;
+  }
+
+  .feature-block {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+    margin-bottom: 120px;
+  }
+
+  .feature-block.reverse {
+    direction: rtl;
+  }
+
+  .feature-block.reverse > * {
+    direction: ltr;
+  }
+
+  .feature-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--cyan);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    background: var(--cyan-dim);
+    border: 1px solid rgba(0,194,203,0.2);
+    padding: 6px 16px;
+    border-radius: 20px;
+  }
+
+  .feature-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    margin-bottom: 20px;
+  }
+
+  .feature-desc {
+    font-size: 1rem;
+    color: var(--gray-light);
+    line-height: 1.8;
+    margin-bottom: 32px;
+  }
+
+  .feature-points {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .feature-points li {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: var(--gray-light);
+  }
+
+  .feature-points li::before {
+    content: '→';
+    color: var(--cyan);
+    font-family: 'IBM Plex Mono', monospace;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  /* UI MOCK */
+  .ui-mock {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--card-border);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .ui-mock-bar {
+    background: rgba(255,255,255,0.05);
+    border-bottom: 1px solid var(--card-border);
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #ff5f57; }
+  .dot-y { background: #febc2e; }
+  .dot-g { background: #28c840; }
+
+  .ui-mock-body {
+    padding: 28px;
+  }
+
+  .ui-input-area {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 0.82rem;
+    color: var(--gray-light);
+    line-height: 1.6;
+    margin-bottom: 16px;
+    min-height: 100px;
+  }
+
+  .ui-btn {
+    background: var(--cyan);
+    color: var(--navy);
+    font-weight: 700;
+    font-size: 0.82rem;
+    padding: 10px 20px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 20px;
+  }
+
+  .ui-output {
+    border-top: 1px solid var(--card-border);
+    padding-top: 20px;
+  }
+
+  .ui-output-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    color: var(--cyan);
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ui-output-label::before {
+    content: '';
+    display: block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--green-ok);
+  }
+
+  .ui-output-row {
+    margin-bottom: 8px;
+    font-size: 0.78rem;
+  }
+
+  .ui-output-row .key {
+    color: var(--gray);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+  }
+
+  .ui-output-row .val {
+    color: var(--white);
+    margin-left: 4px;
+  }
+
+  .ui-risk-bar {
+    background: rgba(255,79,94,0.1);
+    border: 1px solid rgba(255,79,94,0.25);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 0.75rem;
+    color: var(--red-alert);
+    margin-top: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  /* pay mock */
+  .pay-mock-body {
+    padding: 24px;
+  }
+
+  .pay-lang-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+
+  .pay-lang-btn {
+    font-size: 0.72rem;
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--card-border);
+    color: var(--gray-light);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .pay-lang-btn.active {
+    background: var(--cyan-dim);
+    border-color: rgba(0,194,203,0.4);
+    color: var(--cyan);
+    font-weight: 700;
+  }
+
+  .pay-item {
+    border-bottom: 1px solid var(--card-border);
+    padding: 14px 0;
+  }
+
+  .pay-item-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+  }
+
+  .pay-item-amount {
+    color: var(--red-alert);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .pay-item-amount.positive {
+    color: var(--green-ok);
+  }
+
+  .pay-explanation {
+    font-size: 0.78rem;
+    color: var(--gray-light);
+    line-height: 1.6;
+  }
+
+  /* ── DATA SECTION ── */
+  #data {
+    padding: 100px 48px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .data-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--card-border);
+    border-radius: 16px;
+    overflow: hidden;
+    border: 1px solid var(--card-border);
+    margin-top: 60px;
+  }
+
+  .data-cell {
+    background: var(--navy);
+    padding: 40px 32px;
+    text-align: center;
+    transition: background 0.3s;
+  }
+
+  .data-cell:hover { background: rgba(255,255,255,0.03); }
+
+  .data-num {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 3rem;
+    color: var(--cyan);
+    line-height: 1;
+    margin-bottom: 8px;
+    letter-spacing: -0.02em;
+  }
+
+  .data-unit {
+    font-size: 1rem;
+    color: var(--cyan);
+  }
+
+  .data-label {
+    font-size: 0.85rem;
+    color: var(--gray-light);
+    line-height: 1.5;
+    margin-top: 8px;
+  }
+
+  /* ── PRICE SECTION ── */
+  #price {
+    padding: 100px 48px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .price-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    max-width: 1100px;
+    margin: 60px auto 0;
+    align-items: start;
+  }
+
+  .price-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--card-border);
+    border-radius: 24px;
+    padding: 36px 32px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+  }
+
+  .price-card:hover {
+    transform: translateY(-4px);
+  }
+
+  .price-card.featured {
+    border-color: rgba(0,194,203,0.5);
+    background: rgba(0,194,203,0.05);
+    box-shadow: 0 0 40px rgba(0,194,203,0.1);
+  }
+
+  .price-card.featured:hover {
+    box-shadow: 0 8px 48px rgba(0,194,203,0.2);
+  }
+
+  .price-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--card-border), transparent);
+  }
+
+  .price-card.featured::before {
+    width: 200px;
+    background: linear-gradient(90deg, transparent, var(--cyan), transparent);
+  }
+
+  .price-recommend {
+    position: absolute;
+    top: -1px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--cyan);
+    color: var(--navy);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 4px 16px;
+    border-radius: 0 0 10px 10px;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+  }
+
+  .price-badge {
+    display: inline-block;
+    background: var(--cyan-dim);
+    border: 1px solid rgba(0,194,203,0.3);
+    color: var(--cyan);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    padding: 5px 14px;
+    border-radius: 20px;
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+    margin-top: 12px;
+  }
+
+  .price-plan-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 1.3rem;
+    margin-bottom: 4px;
+    color: var(--white);
+  }
+
+  .price-target {
+    font-size: 0.75rem;
+    color: var(--gray);
+    margin-bottom: 20px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .price-main {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 3.2rem;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .price-main span {
+    font-size: 1.2rem;
+    color: var(--gray-light);
+    font-weight: 400;
+  }
+
+  .price-sub {
+    font-size: 0.75rem;
+    color: var(--gray);
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--card-border);
+  }
+
+  .price-features {
+    list-style: none;
+    text-align: left;
+    margin-bottom: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 11px;
+  }
+
+  .price-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    font-size: 0.85rem;
+    color: var(--gray-light);
+    line-height: 1.5;
+  }
+
+  .price-features li .check {
+    color: var(--green-ok);
+    font-weight: 700;
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .price-features li .dash {
+    color: var(--gray);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .price-features li.disabled {
+    color: var(--gray);
+    opacity: 0.5;
+  }
+
+  .price-limit {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--cyan);
+    background: var(--cyan-dim);
+    border: 1px solid rgba(0,194,203,0.2);
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .price-trial {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.68rem;
+    color: var(--gray);
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 900px) {
+    .price-grid { grid-template-columns: 1fr; max-width: 420px; }
+  }
+
+  /* ── LEGAL SECTION ── */
+  #legal {
+    padding: 60px 48px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .legal-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    padding: 36px 40px;
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .legal-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--gray);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .legal-text {
+    font-size: 0.8rem;
+    color: var(--gray);
+    line-height: 1.8;
+  }
+
+  /* ── CTA SECTION ── */
+  #cta {
+    padding: 120px 48px;
+    position: relative;
+    z-index: 1;
+    text-align: center;
+    overflow: hidden;
+  }
+
+  .cta-glow {
+    position: absolute;
+    width: 600px;
+    height: 400px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(0,194,203,0.1) 0%, transparent 70%);
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+  }
+
+  .cta-inner {
+    position: relative;
+    z-index: 2;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .cta-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: clamp(2rem, 4vw, 3rem);
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    margin-bottom: 20px;
+  }
+
+  .cta-sub {
+    font-size: 1rem;
+    color: var(--gray-light);
+    margin-bottom: 40px;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--card-border);
+    padding: 40px 48px;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 24px;
+  }
+
+  .footer-links {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .footer-links a {
+    color: var(--gray);
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--white); }
+
+  .footer-copy {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    color: var(--gray);
+  }
+
+  /* ── SCROLL FADE IN ── */
+  .fade-in {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 900px) {
+    header { padding: 16px 24px; }
+    nav { display: none; }
+    #hero, #pain, #solution, #data, #price, #cta, footer { padding-left: 24px; padding-right: 24px; }
+    .hero-inner { grid-template-columns: 1fr; gap: 48px; }
+    .hero-visual { display: none; }
+    .pain-grid { grid-template-columns: 1fr; }
+    .feature-block { grid-template-columns: 1fr; gap: 40px; }
+    .feature-block.reverse { direction: ltr; }
+    .data-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <a href="#" class="logo">
+    <div class="logo-mark">R</div>
+    ロクペイ
+  </a>
+  <nav>
+    <a href="#solution">機能</a>
+    <a href="#data">効果</a>
+    <a href="#price">料金</a>
+    <a href="#cta" class="nav-cta">14日間 無料で試す</a>
+  </nav>
+</header>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="hero-glow"></div>
+  <div class="hero-inner">
+    <div class="hero-content">
+      <div class="hero-eyebrow">特定技能受入機関向け SaaS</div>
+      <h1 class="hero-title">
+        月次の記録地獄と<br>給与説明トラブルを、
+        <em>AIで終わらせる。</em>
+      </h1>
+      <p class="hero-sub">
+        担当者のメモをそのまま貼り付けると、<br>
+        入管法定様式の支援記録が30秒で完成。<br>
+        給与明細を撮るだけで、10言語でAIが説明。
+      </p>
+      <div class="hero-cta-group">
+        <a href="#cta" class="btn-primary">
+          14日間 無料で試す →
+        </a>
+        <a href="#solution" class="btn-ghost">
+          機能を見る
+        </a>
+      </div>
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        月額 1,980円〜 / 14日間無料トライアル
+      </div>
+    </div>
+
+    <div class="hero-visual">
+      <div class="mock-card">
+        <div class="mock-header">
+          <div class="mock-icon">📋</div>
+          <div>
+            <div class="mock-title-text">支援記録 自動生成</div>
+            <div class="mock-sub-text">グエン・ティ・フオン</div>
+          </div>
+          <div class="mock-ai-badge">AI生成済み</div>
+        </div>
+        <div class="mock-item">
+          <div class="mock-label">■ 就労状況の確認</div>
+          <div class="mock-value">業務に習熟しており、特段の問題は見受けられない。</div>
+        </div>
+        <div class="mock-item">
+          <div class="mock-label">■ 生活状況の確認</div>
+          <div class="mock-value">寮の騒音問題について相談あり。睡眠に支障が生じている。</div>
+        </div>
+        <div class="mock-risk">
+          <span>⚠️</span>
+          <span>【リスク検出】「眠れない」発言を確認。次回面談で要フォロー。</span>
+        </div>
+      </div>
+
+      <div class="mock-card-2">
+        <div class="mock-label">対応言語</div>
+        <div style="font-size:0.85rem;font-weight:700;margin:6px 0;">10言語対応</div>
+        <div class="lang-chips">
+          <div class="lang-chip active">🇻🇳 VI</div>
+          <div class="lang-chip active">🇳🇵 NE</div>
+          <div class="lang-chip">🇮🇩 ID</div>
+          <div class="lang-chip">🇵🇭 TL</div>
+          <div class="lang-chip">🇲🇲 MY</div>
+          <div class="lang-chip">🇹🇭 TH</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PAIN -->
+<section id="pain">
+  <div class="section-inner">
+    <div class="section-eyebrow">The Problem</div>
+    <h2 class="section-title">受入機関が毎月消耗している、<br>誰も解決していなかった3つの地獄。</h2>
+    <div class="pain-grid fade-in">
+      <div class="pain-item">
+        <div class="pain-number">01</div>
+        <div class="pain-title">支援記録の「月末作文」</div>
+        <div class="pain-desc">法定義務の支援記録を、月末に記憶を掘り起こして作文。担当者1人あたり月10〜20時間が消える。書き方が属人化して、監査リスクも高い。</div>
+        <div class="pain-tag">毎月・全員</div>
+      </div>
+      <div class="pain-item">
+        <div class="pain-number">02</div>
+        <div class="pain-title">給与日前後の「なぜ引かれるの」ラッシュ</div>
+        <div class="pain-desc">住民税・社会保険・所得税を多言語で正確に説明できる担当者がいない。DeepL翻訳では意味が伝わらず、不信感からトラブルに発展するケースも。</div>
+        <div class="pain-tag">毎月25日前後</div>
+      </div>
+      <div class="pain-item">
+        <div class="pain-number">03</div>
+        <div class="pain-title">「突然いなくなった」失踪の損害</div>
+        <div class="pain-desc">失踪1件で採用・手数料・入管対応に50〜100万円が飛ぶ。兆候は必ずあったのに、誰も定量化できていなかった。記録が積み上がると、ロクペイが予兆を検知する。</div>
+        <div class="pain-tag">発見は常に手遅れ</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SOLUTION -->
+<section id="solution">
+  <div class="section-inner">
+    <div class="solution-divider">
+      <div class="solution-divider-line"></div>
+      <div class="solution-divider-text">// SOLUTION</div>
+      <div class="solution-divider-line"></div>
+    </div>
+
+    <!-- 柱1 -->
+    <div class="feature-block fade-in">
+      <div class="feature-text">
+        <div class="feature-tag">柱 01 ── 支援記録AI生成</div>
+        <h3 class="feature-title">メモを貼るだけ。<br>入管様式の記録が<br>30秒で完成する。</h3>
+        <p class="feature-desc">
+          担当者のメモ・音声・LINEのチャットログを
+          そのまま入力するだけ。
+          AIが文脈を読み取り、法定様式に沿った
+          支援実施記録を自動生成します。
+        </p>
+        <ul class="feature-points">
+          <li>話し言葉・箇条書き・多言語混在のまま入力OK</li>
+          <li>入管法定様式（省令第12条）に準拠した出力</li>
+          <li>「眠れない」「辞めたい」等のリスクワードを自動検出してアラート</li>
+          <li>確定ボタンでタイムスタンプ付き保存・PDF出力</li>
+          <li>12ヶ月分から年次定期報告書ドラフトを一括生成</li>
+        </ul>
+      </div>
+      <div class="ui-mock">
+        <div class="ui-mock-bar">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <div class="ui-mock-body">
+          <div class="mock-label" style="margin-bottom:8px;">担当者メモ（何でもOK）</div>
+          <div class="ui-input-area">
+            今日グエンさんと話した。仕事慣れてきたみたい。
+            でも寮の隣がうるさくて眠れないと言ってた。
+            来月から残業増えそうで少し不安そうだった。
+            給料は特に問題なし。体調も良いと言ってた。
+          </div>
+          <div class="ui-btn">
+            ⚡ AIで記録を生成する
+          </div>
+          <div class="ui-output">
+            <div class="ui-output-label">AI生成ドラフト（確認後に確定）</div>
+            <div class="ui-output-row">
+              <span class="key">■ 就労状況：</span>
+              <span class="val">業務に習熟。特段の問題なし。</span>
+            </div>
+            <div class="ui-output-row">
+              <span class="key">■ 生活状況：</span>
+              <span class="val">寮の騒音により睡眠障害の可能性あり。</span>
+            </div>
+            <div class="ui-output-row">
+              <span class="key">■ 相談内容：</span>
+              <span class="val">残業増加への不安。住居環境の改善要望。</span>
+            </div>
+            <div class="ui-risk-bar">
+              ⚠️ リスク検出：「眠れない」→次回要フォロー
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 柱2 -->
+    <div class="feature-block reverse fade-in">
+      <div class="feature-text">
+        <div class="feature-tag">柱 02 ── 給与明細多言語説明</div>
+        <h3 class="feature-title">給与明細を撮るだけ。<br>10言語で「なぜ引かれるか」<br>をAIが説明する。</h3>
+        <p class="feature-desc">
+          毎月給与日前後に発生する「なぜこんなに引かれているの？」
+          という問い合わせを、担当者ゼロで解決。
+          外国人が自分のスマホで、自分の言語で
+          納得できるまで確認できます。
+        </p>
+        <ul class="feature-points">
+          <li>給与明細の画像・PDFをアップロード → AIがOCR読取</li>
+          <li>健康保険・厚生年金・住民税など各項目を10言語で説明</li>
+          <li>「なぜこの制度があるか」まで母国語でわかりやすく解説</li>
+          <li>「わかった / まだ質問ある」の確認記録が証跡として保存</li>
+          <li>不満ワード検出時は管理者にリアルタイムアラート</li>
+        </ul>
+      </div>
+      <div class="ui-mock">
+        <div class="ui-mock-bar">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+        </div>
+        <div class="pay-mock-body">
+          <div class="mock-label" style="margin-bottom:8px;">言語を選んでください</div>
+          <div class="pay-lang-row">
+            <button class="pay-lang-btn">English</button>
+            <button class="pay-lang-btn active">Tiếng Việt</button>
+            <button class="pay-lang-btn">नेपाली</button>
+            <button class="pay-lang-btn">Indonesia</button>
+            <button class="pay-lang-btn">中文</button>
+          </div>
+
+          <div style="text-align:center;margin-bottom:20px;">
+            <div style="font-size:0.75rem;color:var(--gray);margin-bottom:4px;">手取り額</div>
+            <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--green-ok);">¥187,540</div>
+          </div>
+
+          <div class="pay-item">
+            <div class="pay-item-header">
+              <span>健康保険料 / Bảo hiểm y tế</span>
+              <span class="pay-item-amount">-¥12,540</span>
+            </div>
+            <div class="pay-explanation">
+              Đây là khoản phí bảo hiểm y tế bắt buộc ở Nhật Bản. Khi bạn đi bệnh viện, bạn chỉ cần trả 30% chi phí khám chữa bệnh. Phí này khoảng 10% lương cơ bản.（病院に行く時、費用の30%だけ払えばいい制度です。）
+            </div>
+          </div>
+          <div class="pay-item">
+            <div class="pay-item-header">
+              <span>基本給 / Lương cơ bản</span>
+              <span class="pay-item-amount positive">+¥220,000</span>
+            </div>
+            <div class="pay-explanation">
+              Đây là mức lương cơ bản theo hợp đồng lao động của bạn.（雇用契約書に記載された基本給です。）
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- DATA -->
+<section id="data">
+  <div class="section-inner">
+    <div class="section-eyebrow">Numbers</div>
+    <h2 class="section-title">現場の数字で語る、<br>ロクペイの効果。</h2>
+    <div class="data-grid fade-in">
+      <div class="data-cell">
+        <div class="data-num">30<span class="data-unit">秒</span></div>
+        <div class="data-label">支援記録の<br>AI生成にかかる時間</div>
+      </div>
+      <div class="data-cell">
+        <div class="data-num">10<span class="data-unit">言語</span></div>
+        <div class="data-label">給与明細説明の<br>対応言語数</div>
+      </div>
+      <div class="data-cell">
+        <div class="data-num">90<span class="data-unit">%</span></div>
+        <div class="data-label">記録作成業務の<br>削減率（目安）</div>
+      </div>
+      <div class="data-cell">
+        <div class="data-num">1,980<span class="data-unit">円〜</span></div>
+        <div class="data-label">月額スタート価格<br>14日間無料で試せる</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICE -->
+<section id="price">
+  <div class="section-inner" style="text-align:center;">
+    <div class="section-eyebrow" style="justify-content:center;">Pricing</div>
+    <h2 class="section-title">まず使って、<br>必要な分だけ広げる。</h2>
+    <div class="price-grid fade-in">
+
+      <!-- STARTER -->
+      <div class="price-card">
+        <div class="price-badge">STARTER</div>
+        <div class="price-plan-name">スターター</div>
+        <div class="price-target">// 〜5名の受入機関向け</div>
+        <div class="price-main">1,980<span>円/月</span></div>
+        <div class="price-sub">税込 / 1事業所 / 管理5名まで</div>
+        <div class="price-limit">支援記録：月30件まで</div>
+        <ul class="price-features">
+          <li><span class="check">✓</span> 支援記録AI自動生成（月30件）</li>
+          <li><span class="check">✓</span> 外国人労働者 名簿管理（5名）</li>
+          <li><span class="check">✓</span> PDF出力・記録保管（5年間）</li>
+          <li><span class="check">✓</span> リスクキーワード検出</li>
+          <li class="disabled"><span class="dash">—</span> 給与明細 多言語説明</li>
+          <li class="disabled"><span class="dash">—</span> 月次サマリーレポート</li>
+          <li class="disabled"><span class="dash">—</span> マルチアカウント</li>
+        </ul>
+        <a href="#cta" class="btn-ghost" style="width:100%;justify-content:center;">
+          無料で試す →
+        </a>
+        <div class="price-trial">14日間トライアル付き<br>クレジットカード不要</div>
+      </div>
+
+      <!-- STANDARD（推奨） -->
+      <div class="price-card featured">
+        <div class="price-recommend">✦ 最もご利用が多いプラン</div>
+        <div class="price-badge">STANDARD</div>
+        <div class="price-plan-name">スタンダード</div>
+        <div class="price-target">// 〜15名の受入機関向け</div>
+        <div class="price-main">3,980<span>円/月</span></div>
+        <div class="price-sub">税込 / 1事業所 / 管理15名まで</div>
+        <div class="price-limit">支援記録＋給与説明：無制限</div>
+        <ul class="price-features">
+          <li><span class="check">✓</span> 支援記録AI自動生成（無制限）</li>
+          <li><span class="check">✓</span> 外国人労働者 名簿管理（15名）</li>
+          <li><span class="check">✓</span> PDF出力・記録保管（5年間）</li>
+          <li><span class="check">✓</span> リスクキーワード検出・アラート</li>
+          <li><span class="check">✓</span> 給与明細 多言語説明（10言語）</li>
+          <li><span class="check">✓</span> 月次サマリーレポート</li>
+          <li class="disabled"><span class="dash">—</span> マルチアカウント</li>
+        </ul>
+        <a href="#cta" class="btn-primary" style="width:100%;justify-content:center;font-size:1rem;padding:16px;">
+          無料で試す →
+        </a>
+        <div class="price-trial">14日間トライアル付き<br>クレジットカード不要</div>
+      </div>
+
+      <!-- GROWTH -->
+      <div class="price-card">
+        <div class="price-badge">GROWTH</div>
+        <div class="price-plan-name">グロース</div>
+        <div class="price-target">// 16名以上・複数拠点向け</div>
+        <div class="price-main">6,980<span>円/月</span></div>
+        <div class="price-sub">税込 / 1事業所 / 人数無制限</div>
+        <div class="price-limit">全機能・人数・回数すべて無制限</div>
+        <ul class="price-features">
+          <li><span class="check">✓</span> 支援記録AI自動生成（無制限）</li>
+          <li><span class="check">✓</span> 外国人労働者 名簿管理（無制限）</li>
+          <li><span class="check">✓</span> PDF出力・記録保管（5年間）</li>
+          <li><span class="check">✓</span> リスクキーワード検出・アラート</li>
+          <li><span class="check">✓</span> 給与明細 多言語説明（10言語）</li>
+          <li><span class="check">✓</span> 月次サマリーレポート</li>
+          <li><span class="check">✓</span> マルチアカウント（担当者複数名）</li>
+        </ul>
+        <a href="#cta" class="btn-ghost" style="width:100%;justify-content:center;">
+          無料で試す →
+        </a>
+        <div class="price-trial">14日間トライアル付き<br>クレジットカード不要</div>
+      </div>
+
+    </div>
+
+    <!-- 横断メモ -->
+    <div style="margin-top:32px;font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--gray);line-height:2;">
+      全プラン共通：いつでも解約可 ・ プラン変更即時反映 ・ データは解約後90日間保持
+    </div>
+  </div>
+</section>
+
+<!-- LEGAL -->
+<section id="legal">
+  <div class="section-inner">
+    <div class="legal-card fade-in">
+      <div class="legal-title">// 免責事項・法的事項</div>
+      <p class="legal-text">
+        本サービスが生成する記録・説明文は情報提供を目的としたものであり、法的効力を持つ書類の作成・提出を代行するものではありません。
+        最終的な内容確認は必ず担当者が行ってください。法的判断・税務相談・在留申請の代行は行いません。
+        生成AIの特性上、出力内容に誤りが含まれる可能性があります。重要な判断は必ず専門家にご確認ください。
+        外国人労働者の個人情報は個人情報保護法に基づき適切に管理されます。詳細はプライバシーポリシーをご確認ください。
+        入管法・特定技能省令の改正により、対応様式・機能を予告なく変更する場合があります。
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section id="cta">
+  <div class="cta-glow"></div>
+  <div class="cta-inner fade-in">
+    <h2 class="cta-title">毎月の記録作業を、<br>今月から終わらせましょう。</h2>
+    <p class="cta-sub">14日間、全機能を無料でお試しいただけます。<br>クレジットカード不要。設定は5分で完了。</p>
+    <a href="#" class="btn-primary" style="font-size:1.1rem;padding:20px 48px;">
+      無料トライアルを始める →
+    </a>
+    <div style="margin-top:20px;font-family:'IBM Plex Mono',monospace;font-size:0.75rem;color:var(--gray);">
+      受入機関・登録支援機関 限定サービス
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <a href="#" class="logo">
+    <div class="logo-mark">R</div>
+    ロクペイ
+  </a>
+
+  <div style="display:flex;flex-direction:column;gap:6px;">
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--gray);line-height:1.8;">
+      <strong style="color:var(--gray-light);font-size:0.8rem;">株式会社TCI</strong><br>
+      〒532-0033 大阪府大阪市淀川区新高1-5-4<br>
+      TEL：<a href="tel:0661513697" style="color:var(--gray);text-decoration:none;">06-6151-3697</a><br>
+      MAIL：<a href="mailto:tci_group@tci-ltd-osaka.com" style="color:var(--cyan);text-decoration:none;">tci_group@tci-ltd-osaka.com</a>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:12px;">
+    <div class="footer-links">
+      <a href="#">利用規約</a>
+      <a href="#">プライバシーポリシー</a>
+      <a href="#">特定商取引法</a>
+      <a href="mailto:tci_group@tci-ltd-osaka.com">お問い合わせ</a>
+    </div>
+    <div class="footer-copy">© 2026 株式会社TCI. All rights reserved.</div>
+  </div>
+</footer>
+
+<script>
+// Intersection Observer for fade-in
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      entry.target.classList.add('visible');
+    }
+  });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// Smooth scroll for anchor links
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+  a.addEventListener('click', e => {
+    const target = document.querySelector(a.getAttribute('href'));
+    if (target) {
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+});
+
+// Language button interaction in mock
+document.querySelectorAll('.pay-lang-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.pay-lang-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  });
+});
+</script>
+</body>
+</html>
