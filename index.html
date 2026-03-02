@@ -1191,17 +1191,171 @@
     transform: translateY(0);
   }
 
-  /* ── RESPONSIVE ── */
+  /* ── HAMBURGER MENU ── */
+  .hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 40px;
+    height: 40px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 6px;
+    z-index: 200;
+  }
+  .hamburger span {
+    display: block;
+    height: 2px;
+    background: var(--white);
+    border-radius: 2px;
+    transition: all 0.3s;
+  }
+  .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  .mobile-menu {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(13,31,60,0.97);
+    z-index: 150;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+  }
+  .mobile-menu.open { display: flex; }
+  .mobile-menu a {
+    color: var(--white);
+    text-decoration: none;
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .mobile-menu .nav-cta {
+    background: var(--cyan);
+    color: var(--navy) !important;
+    padding: 14px 36px;
+    border-radius: 8px;
+    font-size: 1.1rem;
+  }
+
+  /* ── RESPONSIVE: タブレット ── */
   @media (max-width: 900px) {
-    header { padding: 16px 24px; }
     nav { display: none; }
-    #hero, #pain, #solution, #data, #price, #cta, footer { padding-left: 24px; padding-right: 24px; }
-    .hero-inner { grid-template-columns: 1fr; gap: 48px; }
-    .hero-visual { display: none; }
-    .pain-grid { grid-template-columns: 1fr; }
-    .feature-block { grid-template-columns: 1fr; gap: 40px; }
+    .hamburger { display: flex; }
+    header { padding: 14px 20px; }
+
+    #hero      { padding: 100px 20px 60px; }
+    #pain      { padding: 72px 20px; }
+    #solution  { padding: 72px 20px; }
+    #data      { padding: 72px 20px; }
+    #price     { padding: 72px 20px; }
+    #cta       { padding: 80px 20px; }
+    #contact   { padding: 72px 20px !important; }
+    #legal     { padding: 48px 20px; }
+    footer     { padding: 32px 20px; }
+
+    .hero-inner          { grid-template-columns: 1fr; gap: 40px; }
+    .hero-visual         { display: none; }
+    .hero-sub            { font-size: 0.95rem; max-width: 100%; }
+    .hero-cta-group      { flex-direction: column; align-items: stretch; gap: 12px; }
+    .hero-cta-group a    { text-align: center; justify-content: center; }
+    .btn-primary         { padding: 14px 28px; font-size: 0.95rem; }
+
+    .pain-grid           { grid-template-columns: 1fr; }
+    .pain-item           { padding: 28px 20px; }
+    .pain-number         { font-size: 2.2rem; }
+
+    .feature-block       { grid-template-columns: 1fr; gap: 32px; margin-bottom: 72px; }
     .feature-block.reverse { direction: ltr; }
-    .data-grid { grid-template-columns: 1fr 1fr; }
+    .feature-title       { font-size: clamp(1.4rem, 5vw, 1.8rem); }
+    .section-title       { margin-bottom: 40px; }
+
+    .data-grid           { grid-template-columns: 1fr 1fr; }
+    .data-cell           { padding: 32px 16px; }
+    .data-num            { font-size: 2.6rem; }
+    .data-unit           { font-size: 0.9rem; }
+    .data-label          { font-size: 0.78rem; margin-top: 10px; }
+
+    .price-grid          { grid-template-columns: 1fr; max-width: 100%; }
+    .price-card          { padding: 28px 20px; }
+    .price-main          { font-size: 2.6rem; }
+
+    footer               { flex-direction: column; gap: 16px; }
+    .footer-links        { gap: 16px; }
+
+    .cta-title           { font-size: clamp(1.6rem, 6vw, 2.4rem); }
+    .cta-sub             { font-size: 0.9rem; }
+  }
+
+  /* ── RESPONSIVE: スマホ ── */
+  @media (max-width: 480px) {
+    header { padding: 12px 16px; }
+
+    #hero     { padding: 88px 16px 48px; }
+    #pain, #solution, #data, #price, #cta, #legal, #contact { padding-left: 16px !important; padding-right: 16px !important; }
+
+    .hero-title          { font-size: clamp(1.8rem, 7vw, 2.4rem); }
+    .hero-sub            { font-size: 0.9rem; line-height: 1.75; }
+    .hero-badge          { font-size: 0.7rem; }
+
+    .section-title       { font-size: clamp(1.5rem, 6vw, 2rem); margin-bottom: 32px; }
+    .section-eyebrow     { font-size: 0.65rem; }
+
+    .pain-item           { padding: 24px 16px; }
+    .pain-title          { font-size: 0.95rem; }
+    .pain-desc           { font-size: 0.82rem; }
+    .pain-number         { font-size: 2rem; }
+
+    /* ─ 数字セクション：スマホは縦2列をさらに最適化 ── */
+    .data-grid           { grid-template-columns: 1fr 1fr; gap: 1px; }
+    .data-cell           { padding: 28px 10px; }
+    .data-num            {
+      font-size: clamp(1.8rem, 7vw, 2.4rem);
+      flex-wrap: wrap;
+      justify-content: center;
+      line-height: 1.1;
+      gap: 2px;
+    }
+    .data-unit           { font-size: 0.75rem; align-self: flex-end; padding-bottom: 3px; }
+    .data-label          { font-size: 0.72rem; margin-top: 8px; line-height: 1.5; }
+
+    /* 「1,980円〜」は長いので折り返し対応 */
+    .data-num.price-num  {
+      font-size: clamp(1.4rem, 5.5vw, 1.9rem);
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
+
+    .feature-block       { gap: 24px; margin-bottom: 56px; }
+    .feature-tag         { font-size: 0.65rem; }
+    .feature-title       { font-size: clamp(1.3rem, 5.5vw, 1.6rem); }
+    .feature-desc        { font-size: 0.88rem; }
+    .feature-points li   { font-size: 0.82rem; }
+
+    .price-card          { padding: 24px 16px; border-radius: 16px; }
+    .price-main          { font-size: 2.2rem; }
+    .price-features li   { font-size: 0.8rem; }
+    .price-badge         { font-size: 0.6rem; }
+    .price-trial         { font-size: 0.65rem; }
+
+    .btn-primary, .btn-ghost { font-size: 0.9rem; padding: 13px 20px; }
+
+    .cta-title           { font-size: clamp(1.4rem, 6.5vw, 1.8rem); }
+    .cta-sub             { font-size: 0.85rem; }
+    .cta-inner a.btn-primary { font-size: 0.95rem !important; padding: 16px 28px !important; }
+
+    footer               { padding: 24px 16px; }
+    .footer-links        { gap: 12px; }
+    .footer-links a      { font-size: 0.75rem; }
+
+    .legal-card          { padding: 24px 16px; border-radius: 12px; }
+    .legal-text          { font-size: 0.78rem; }
   }
 </style>
 </head>
@@ -1220,7 +1374,19 @@
     <a href="#contact">お問い合わせ</a>
     <a href="#contact" class="nav-cta">14日間 無料で試す</a>
   </nav>
+  <button class="hamburger" id="hamburger" aria-label="メニュー">
+    <span></span><span></span><span></span>
+  </button>
 </header>
+
+<!-- MOBILE MENU -->
+<div class="mobile-menu" id="mobile-menu">
+  <a href="#solution" class="mobile-menu-link">機能</a>
+  <a href="#data" class="mobile-menu-link">効果</a>
+  <a href="#price" class="mobile-menu-link">料金</a>
+  <a href="#contact" class="mobile-menu-link">お問い合わせ</a>
+  <a href="#contact" class="nav-cta mobile-menu-link">14日間 無料で試す</a>
+</div>
 
 <!-- HERO -->
 <section id="hero">
@@ -1470,7 +1636,7 @@
         <div class="data-label">記録作成業務の<br>削減率（目安）</div>
       </div>
       <div class="data-cell">
-        <div class="data-num">1,980<span class="data-unit">円〜</span></div>
+        <div class="data-num price-num">1,980<span class="data-unit">円〜</span></div>
         <div class="data-label">月額スタート価格<br>14日間無料で試せる</div>
       </div>
     </div>
@@ -1772,7 +1938,7 @@
   </div>
 </section>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script>
 // Intersection Observer for fade-in
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
@@ -1783,6 +1949,29 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ── ハンバーガーメニュー ──
+(function() {
+  const hamburger = document.getElementById('hamburger');
+  const mobileMenu = document.getElementById('mobile-menu');
+  if (!hamburger || !mobileMenu) return;
+
+  function toggleMenu(open) {
+    hamburger.classList.toggle('open', open);
+    mobileMenu.classList.toggle('open', open);
+    document.body.style.overflow = open ? 'hidden' : '';
+  }
+
+  hamburger.addEventListener('click', () => {
+    const isOpen = mobileMenu.classList.contains('open');
+    toggleMenu(!isOpen);
+  });
+
+  // メニュー内リンクをタップしたら閉じる
+  mobileMenu.querySelectorAll('a').forEach(a => {
+    a.addEventListener('click', () => toggleMenu(false));
+  });
+})();
 
 // お問い合わせフォーム送信（Formspree）
 async function sendForm() {
