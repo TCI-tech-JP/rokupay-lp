@@ -1636,6 +1636,51 @@
       </div>
 
       <!-- 送信ボタン -->
+      <script>
+      async function sendForm() {
+        const company  = document.getElementById('f-company').value.trim();
+        const name     = document.getElementById('f-name').value.trim();
+        const email    = document.getElementById('f-email').value.trim();
+        const tel      = document.getElementById('f-tel').value.trim();
+        const workers  = document.getElementById('f-workers').value;
+        const message  = document.getElementById('f-message').value.trim();
+        const errEl    = document.getElementById('form-error');
+        const successEl = document.getElementById('form-success');
+        const btn      = document.getElementById('submit-btn');
+        if (!company || !name || !email || !message) {
+          errEl.style.display = 'block';
+          return;
+        }
+        errEl.style.display = 'none';
+        btn.disabled = true;
+        btn.textContent = '送信中...';
+        try {
+          const res = await fetch('https://formspree.io/f/xkovlwdp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({
+              会社名: company,
+              担当者名: name,
+              メールアドレス: email,
+              電話番号: tel || '未入力',
+              外国人労働者数: workers || '未選択',
+              お問い合わせ内容: message,
+            })
+          });
+          if (res.ok) {
+            document.getElementById('contact-form').style.display = 'none';
+            successEl.style.display = 'block';
+          } else {
+            throw new Error('送信失敗');
+          }
+        } catch(e) {
+          btn.disabled = false;
+          btn.textContent = '送信する →';
+          errEl.textContent = '⚠ 送信に失敗しました。時間をおいて再度お試しください。';
+          errEl.style.display = 'block';
+        }
+      }
+      </script>
       <button id="submit-btn" onclick="sendForm()" class="btn-primary" style="width:100%;justify-content:center;font-size:1rem;padding:18px;border:none;cursor:pointer;">
         送信する →
       </button>
@@ -1649,7 +1694,7 @@
       </div>
 
       <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--gray);text-align:center;line-height:1.8;">
-        送信先：tci_group@tci-ltd-osaka.com<br>
+        送信先：<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5327303a0c34213c26231327303a7e3f27377e3c203238327d303c3e">[email&#160;protected]</a><br>
         株式会社TCI｜TEL：06-6151-3697（平日 9:00〜18:00）
       </div>
     </div>
@@ -1683,7 +1728,7 @@
   </div>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // Intersection Observer for fade-in
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
@@ -1741,11 +1786,3 @@ async function sendForm() {
     }
   } catch(e) {
     btn.disabled = false;
-    btn.textContent = '送信する →';
-    errEl.textContent = '⚠ 送信に失敗しました。時間をおいて再度お試しください。';
-    errEl.style.display = 'block';
-  }
-}
-
-
-document.querySelectorAll('a[href^="#"]').f
