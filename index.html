@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ロクペイ｜特定技能受入機関の月次業務を、AIで終わらせる。</title>
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700;900&family=Syne:wght@700;800&family=IBM+Plex+Mono:wght@400;600&family=Inter:wght@700;800;900&display=swap" rel="stylesheet">
 <style>
   :root {
     --navy: #0d1f3c;
@@ -787,33 +787,42 @@
 
   .data-cell {
     background: var(--navy);
-    padding: 40px 32px;
+    padding: 48px 32px;
     text-align: center;
     transition: background 0.3s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
   }
 
   .data-cell:hover { background: rgba(255,255,255,0.03); }
 
   .data-num {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-weight: 800;
-    font-size: 3rem;
-    color: var(--cyan);
+    font-size: 3.8rem;
+    color: #ffffff;
     line-height: 1;
-    margin-bottom: 8px;
-    letter-spacing: -0.02em;
+    letter-spacing: -0.03em;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
   }
 
   .data-unit {
-    font-size: 1rem;
-    color: var(--cyan);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 1.1rem;
+    color: #ffffff;
+    font-weight: 700;
   }
 
   .data-label {
     font-size: 0.85rem;
     color: var(--gray-light);
-    line-height: 1.5;
-    margin-top: 8px;
+    line-height: 1.6;
+    margin-top: 16px;
+    text-align: center;
   }
 
   /* ── PRICE SECTION ── */
@@ -920,17 +929,19 @@
   }
 
   .price-main {
-    font-family: 'Syne', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-weight: 800;
     font-size: 3.2rem;
-    letter-spacing: -0.04em;
+    letter-spacing: -0.03em;
     line-height: 1;
     margin-bottom: 4px;
+    color: #ffffff;
   }
 
   .price-main span {
-    font-size: 1.2rem;
-    color: var(--gray-light);
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 1.1rem;
+    color: #c5d1e8;
     font-weight: 400;
   }
 
@@ -1412,7 +1423,7 @@
 
           <div style="text-align:center;margin-bottom:20px;">
             <div style="font-size:0.75rem;color:var(--gray);margin-bottom:4px;">手取り額</div>
-            <div style="font-family:'Syne',sans-serif;font-size:2rem;font-weight:800;color:var(--green-ok);">¥187,540</div>
+            <div style="font-family:'Inter',sans-serif;font-size:2rem;font-weight:800;color:#ffffff;letter-spacing:-0.02em;">¥187,540</div>
           </div>
 
           <div class="pay-item">
@@ -1592,7 +1603,7 @@
     <!-- 送信完了メッセージ（初期非表示） -->
     <div id="form-success" style="display:none;color:var(--green-ok);font-size:1rem;font-family:'IBM Plex Mono',monospace;text-align:center;padding:40px 20px;background:rgba(0,229,160,0.08);border:1px solid rgba(0,229,160,0.3);border-radius:16px;line-height:2;">
       ✅ 送信完了しました！<br>通常2営業日以内にご返信いたします。<br><br>
-      <span style="font-size:0.75rem;color:var(--gray);">株式会社TCI｜tci_group@tci-ltd-osaka.com</span>
+      <span style="font-size:0.75rem;color:var(--gray);">株式会社TCI｜<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="b7c3d4dee8d0c5d8c2c7f7c3d4de9adbc3d39ad8c4d6dcd699d4d8da">[email&#160;protected]</a></span>
     </div>
 
     <!-- フォーム本体 -->
@@ -1643,7 +1654,7 @@
       </div>
 
       <!-- 送信ボタン -->
-      <script>
+      <script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
       async function sendForm() {
         const company  = document.getElementById('f-company').value.trim();
         const name     = document.getElementById('f-name').value.trim();
@@ -1697,7 +1708,7 @@
       </div>
 
       <div style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--gray);text-align:center;line-height:1.8;">
-        送信先：tci_group@tci-ltd-osaka.com<br>
+        送信先：<a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="790d1a10261e0b160c09390d1a1054150d1d54160a181218571a1614">[email&#160;protected]</a><br>
         株式会社TCI｜TEL：06-6151-3697（平日 9:00〜18:00）
       </div>
     </div><!-- /#contact-form -->
@@ -1732,7 +1743,7 @@
   </div>
 </footer>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 // Intersection Observer for fade-in
 const observer = new IntersectionObserver((entries) => {
   entries.forEach(entry => {
@@ -1773,20 +1784,4 @@ async function sendForm() {
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
       body: JSON.stringify({
         会社名: company,
-        担当者名: name,
-        メールアドレス: email,
-        電話番号: tel || '未入力',
-        外国人労働者数: workers || '未選択',
-        お問い合わせ内容: message,
-      })
-    });
-
-    if (res.ok) {
-      // 成功
-      document.getElementById('form-wrap').style.display = 'none';
-      document.getElementById('form-success').style.display = 'block';
-    } else {
-      throw new Error('送信失敗');
-    }
-  } catch(e) {
-    btn.disabled = false;
+        担当者�
